@@ -1,10 +1,15 @@
-from dotenv import load_dotenv
+from pathlib import Path
 import os
 import logging
+
+from dotenv import load_dotenv
 import discord
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.theme import Theme
+from rich.highlighter import NullHighlighter
+
+# from services.http import close_session
 
 theme = Theme({
     "logging.level.info": "bold cyan",
@@ -14,7 +19,7 @@ theme = Theme({
 })
 
 load_dotenv()
-bot = discord.Bot()
+
 console = Console(highlight=False, theme=theme)
 logging.basicConfig(
     level=logging.INFO,
@@ -23,27 +28,42 @@ logging.basicConfig(
         RichHandler(
             console=console,
             show_path=False,
-            highlighter=None,
+            highlighter=NullHighlighter(),
             rich_tracebacks=True,
-            log_time_format="[%X]")]
+            log_time_format="[%X]",
+        )
+    ],
 )
 
-log = logging.getLogger("cortex")
+logging.getLogger("discord").setLevel(logging.WARNING)
+logger = logging.getLogger("cortex")
+logging.getLogger("cogs").setLevel(logging.INFO)
 
-@bot.event
-async def on_ready():
-    log.info(f'logged in as ur goat {bot.user}')
+COGS_DIR = Path(__file__).parent / "cogs"
 
-@bot.slash_command(name="ping", description="pong")
-async def hello(ctx: discord.ApplicationContext):
-    latency_ms = round(bot.latency * 1000) # wallahi im lowkey tuff????
-    await ctx.respond(f"pong! latency: {latency_ms}ms")
-    log.info(f"ping command used by {ctx.author} in {ctx.guild.name}")
 
-@bot.slash_command(name="reverse_message", description="reverses a message")
-async def reverse_message(ctx: discord.ApplicationContext, message: str):
-    reversed_message = ''.join(reversed(message))
-    await ctx.respond(f"reversed message: {reversed_message}")
-    log.info(f"reverse_message command used by {ctx.author} in {ctx.guild.name}")
-    
-bot.run(os.getenv("DISCORD_TOKEN"))
+class Cortex(discord.Bot):
+    async def on_ready(self) -> None:
+        logger.info("logged in as %s", self.user)
+
+    def discover_ext(self) -> None:
+        for path in sorted(COGS_DIR.glob("*.py")):
+            if path.name.startswith("_"):
+                continue
+            module = f"cogs.{path.stem}"
+            try:
+                self.load_extension(module)
+                logger.info("loaded extension: %s", module)
+            except Exception as exc:
+                logger.error("failed to load %s: %s", module, exc)
+
+    # async def close(self) -> None:
+    #     await close_session()
+    #     await super().close()
+
+
+bot = Cortex()
+bot.discover_ext()
+
+if __name__ == "__main__":
+    bot.run(os.environ["DISCORD_TOKEN"])
