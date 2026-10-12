@@ -1,5 +1,10 @@
 from pathlib import Path
 import os
+os.environ["PATH"] = os.pathsep.join([
+    os.path.join(os.path.dirname(__file__), ".venv", "Lib", "site-packages", "magic", "libmagic"),
+    os.environ["PATH"],
+])
+
 import logging
 
 from dotenv import load_dotenv
