@@ -3,14 +3,16 @@ A Python-powered Discord bot that automates server setup, API testing and revers
 
 ## Project structure
 ```
-.
-├── main.py # entry point: config, logging, bot, cog discovery
-├── cogs/ # one module per command category
-│ └── ping.py
-├── services/ # shared helpers (HTTP session, etc.)
-│ └── http.py
-├── .env # secrets (not committed)
-└── requirements.txt
+├── main.py
+├── cogs/
+│   ├── ping.py
+│   ├── hash.py
+│   └── fileinfo.py
+├── services/            # (empty for now; planned)
+├── .env
+├── .env.example
+├── requirements.txt
+└── requirements-windows.txt
 ```
 
 ## Setup
@@ -19,8 +21,8 @@ git clone https://github.com/zeyadhost/cortex-bot
 cd cortex-bot
 python -m venv .venv
 .venv\Scripts\Activate.ps1 # (source .venv/bin/activate for Linux/macOS)
-pip install -r requirements.txt
-cp .env.example .env
+pip install -r requirements.txt # (pip install -r requirements-windows.txt for Windows)
+cp .env.example .env # (Copy-Item .env.example .env on Windows)
 nano .env # or use your preferred editor to edit .env
 python main.py
 ```
